@@ -14,10 +14,7 @@ class SiteController extends Controller
 {
     public function index($employer_id)
     {
-
-          $sites = Site::with('employer')->where('employer_id', $employer_id)->get();
-
-
+        $sites = Site::with('employer')->where('employer_id', $employer_id)->get();
         return view('admin.view.site.index', compact('sites', 'employer_id'));
     }
 
@@ -28,10 +25,14 @@ class SiteController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string',
-            'address' => 'required|string',
-        ]);
+        $email = Site::where('email', $request->email)->where('employer_id', $request->company_id)->first();
+        if ($email) {
+            return redirect()->back()->with('error', 'Email already exists.');
+        }
+        $phone = Site::where('phone', $request->phone)->where('employer_id', $request->company_id)->first();
+        if ($phone) {
+            return redirect()->back()->with('error', 'Number already exists.');
+        }
 
         $input = [
             'employer_id' => $request->company_id,
@@ -40,15 +41,13 @@ class SiteController extends Controller
             'phone' => $request->phone,
             'email' => $request->email,
         ];
-
         if ($request->hasFile('image')) {
             $imageName = time() . rand(1000, 9999) . '.' . $request->file('image')->extension();
             $request->file('image')->move(public_path('images/sites'), $imageName);
             $input['image'] = $imageName;
         }
-
         Site::create($input);
-        return redirect(url('admin/site', $request->company_id))->with('success', 'Site created.');
+        return redirect(url('admin/site', $request->company_id))->with('success', 'Site created successfully.');
     }
 
     public function edit($id, $employer_id)
@@ -59,6 +58,14 @@ class SiteController extends Controller
 
     public function update(Request $request, $id)
     {
+        $email = Site::where('email', $request->email)->where('employer_id', $request->company_id)->where('id', '!=', $id)->first();
+        if ($email) {
+             return redirect()->back()->with('error', 'Email already exists.');
+        }
+        $phone = Site::where('phone', $request->phone)->where('employer_id', $request->company_id)->where('id', '!=', $id)->first();
+        if ($phone) {
+            return redirect()->back()->with('error', 'Number already exists.');
+        }
 
         $site = Site::findOrFail($id);
         $input = [
@@ -67,7 +74,6 @@ class SiteController extends Controller
             'phone' => $request->phone,
             'email' => $request->email,
         ];
-
         if ($request->hasFile('image')) {
             $oldImagePath = public_path('images/sites/' . $site->image);
             if (File::exists($oldImagePath)) {
@@ -78,13 +84,13 @@ class SiteController extends Controller
             $input['image'] = $imageName;
         }
         Site::where('id', $id)->update($input);
-        return redirect(url('admin/site', $request->company_id))->with('success', 'Site updated.');
+        return redirect(url('admin/site', $request->company_id))->with('success', 'Site updated successfully.');
     }
 
-    public function show($id)
+    public function show($id , $employer_id)
     {
         $site = Site::findOrFail($id);
-        return view('admin.view.site.show', compact('site'));
+        return view('admin.view.site.show', compact('site', 'employer_id'));
     }
 
     public function destroy($id)
@@ -96,6 +102,6 @@ class SiteController extends Controller
         }
         $site->delete();
 
-        return back()->with('success', 'Site deleted.');
+        return back()->with('success', 'Site deleted successfully.');
     }
 }

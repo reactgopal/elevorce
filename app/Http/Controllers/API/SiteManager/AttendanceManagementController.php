@@ -8,6 +8,7 @@ use App\Jobs\SiteManagerFaceCheck;
 use App\Models\Attendance;
 use App\Models\CorrectionRequest;
 use App\Models\Employee;
+use App\Models\Holiday;
 use Carbon\Carbon;
 use App\Models\Shift;
 use App\Models\SiteManager;
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\Schema;
 class AttendanceManagementController extends Controller
 {
 
-     public function getSiteManagerAttendanceManagement(Request $request)
+    public function getSiteManagerAttendanceManagement(Request $request)
     {
 
 
@@ -56,11 +57,40 @@ class AttendanceManagementController extends Controller
                 return Carbon::parse($item->check_in)->format('Y-m-d');
             });
 
+            $holidays = Holiday::where('employer_id', $siteManager->employer_id) // adjust relation if needed
+                ->get()
+                ->map(function ($holiday) {
+                    return [
+                        'start_date' => Carbon::parse($holiday->start_date)->format('Y-m-d'),
+                        'end_date'   => Carbon::parse($holiday->end_date)->format('Y-m-d'),
+                        'name'       => $holiday->occasion
+                    ];
+                });
+
+
             $response = [];
 
             foreach ($period as $date) {
                 $dateStr = $date->format('Y-m-d');
                 $record = $attendances->get($dateStr);
+                $isWeekend = $date->isSunday();
+
+
+                $holidayMatch = $holidays->first(function ($h) use ($dateStr) {
+                    return $dateStr >= $h['start_date'] && $dateStr <= $h['end_date'];
+                });
+
+                $isHoliday = !empty($holidayMatch);
+                $holidayName = null;
+
+                // Decide priority: if holiday exists, holiday overrides weekend
+                if ($isHoliday) {
+                    $isWeekend = false;
+                    $holidayName = $holidayMatch['name'];
+                } elseif ($isWeekend) {
+                    $holidayName = 'Sunday';
+                }
+
                 if ($record) {
                     $workedHours = null;
                     $overtime = null;
@@ -105,6 +135,9 @@ class AttendanceManagementController extends Controller
                         'time_range'    => null,
                         'half_day_type' => null,
                         'shift_name'    => optional($record->shift)->name,
+                        'is_weekend'    => $isWeekend,
+                        'is_holiday'    => $isHoliday,
+                        'holiday_name'  => $holidayName,
                     ];
                 } else {
                     $response[] = [
@@ -123,6 +156,9 @@ class AttendanceManagementController extends Controller
                         'time_range'    => null,
                         'half_day_type' => null,
                         'shift_name'    => null,
+                        'is_weekend'    => $isWeekend,
+                        'is_holiday'    => $isHoliday,
+                        'holiday_name'  => $holidayName,
                     ];
                 }
             }
@@ -241,7 +277,8 @@ class AttendanceManagementController extends Controller
             'half_day'        => $halfDay,
             'absent'          => $absent,
         ];
-        $correctionRequest = CorrectionRequest::where('site_id', $siteManager->site_id)->where('status', 'pending')->count();
+        $employee = Employee::where('site_id',$siteManager->site_id)->pluck('id')->toArray();
+        $correctionRequest = CorrectionRequest::whereIn('employee_id', $employee)->where('status', 'pending')->count();
 
         return $this->success(true, 'Attendance summary retrieved.', [
             'your_attendance'          => $yourAttendance,
@@ -263,9 +300,37 @@ class AttendanceManagementController extends Controller
         if ($dateCarbon->greaterThan(Carbon::today())) {
             return $this->success(true, 'Future dates are not allowed.', []);
         }
+
         $employees = \App\Models\Employee::where('site_id', $siteManager->site_id)->get();
         $response = [];
+
         foreach ($employees as $employee) {
+            // Fetch holiday list for employer
+            $holidays = Holiday::where('employer_id', optional($employee->site)->employer_id)
+                ->get()
+                ->map(function ($holiday) {
+                    return [
+                        'start_date' => Carbon::parse($holiday->start_date)->format('Y-m-d'),
+                        'end_date'   => Carbon::parse($holiday->end_date)->format('Y-m-d'),
+                        'name'       => $holiday->occasion
+                    ];
+                });
+
+            // Check if this date is in a holiday range
+            $holidayMatch = $holidays->first(function ($h) use ($dateCarbon) {
+                $dateStr = $dateCarbon->format('Y-m-d');
+                return $dateStr >= $h['start_date'] && $dateStr <= $h['end_date'];
+            });
+
+            $isWeekend = $dateCarbon->isSunday();
+            $isHoliday = !empty($holidayMatch);
+            $holidayName = $isHoliday
+                ? $holidayMatch['name']
+                : ($isWeekend ? "Sunday" : null);
+
+            // Check if weekend
+
+            // Fetch attendance
             $attendance = \App\Models\Attendance::with(['site', 'shift'])
                 ->where('employee_id', $employee->id)
                 ->whereDate('check_in', $dateCarbon)
@@ -274,6 +339,8 @@ class AttendanceManagementController extends Controller
                         ->orWhere('is_site_manager', 0);
                 })
                 ->first();
+
+            // Fetch leave
             $leave = \App\Models\Leave::where('employee_id', $employee->id)
                 ->where('status', 'approved')
                 ->whereDate('from_date', '<=', $dateCarbon)
@@ -282,6 +349,7 @@ class AttendanceManagementController extends Controller
                 ->first();
 
             $onLeave = $leave ? true : false;
+
             if ($attendance) {
                 $workedHours = null;
                 $overtime = null;
@@ -293,6 +361,7 @@ class AttendanceManagementController extends Controller
                     $hours = floor($totalMinutes / 60);
                     $minutes = $totalMinutes % 60;
                     $workedHours = sprintf('%02d:%02d', $hours, $minutes);
+
                     if ($attendance->shift && $attendance->shift->end_time) {
                         $shiftEndTime = Carbon::parse($attendance->shift->end_time);
                         $shiftEnd = $shiftEndTime->copy()->setDate(
@@ -311,11 +380,12 @@ class AttendanceManagementController extends Controller
                         }
                     }
                 }
+
                 $response[] = [
                     'employee_id'   => $employee->id,
                     'employee_name' => $employee->name,
                     'site_name'     => optional($attendance->site)->name,
-                    'address'     => $employee->address,
+                    'address'       => $employee->address,
                     'image'         => $employee->image,
                     'date'          => $dateCarbon->toDateString(),
                     'status'        => 'present',
@@ -328,13 +398,16 @@ class AttendanceManagementController extends Controller
                     'time_range'    => $leave?->time_range,
                     'half_day_type' => $leave?->half_day_type,
                     'shift_name'    => optional($attendance->shift)->name,
+                    'is_weekend'    => $isWeekend,
+                    'is_holiday'    => $isHoliday,
+                    'holiday_name'  => $holidayName,
                 ];
             } else {
                 $response[] = [
                     'employee_id'   => $employee->id,
                     'employee_name' => $employee->name,
                     'site_name'     => null,
-                    'address'     => $employee->address,
+                    'address'       => $employee->address,
                     'image'         => $employee->image,
                     'date'          => $dateCarbon->toDateString(),
                     'status'        => $onLeave ? 'on_leave' : 'absent',
@@ -347,11 +420,16 @@ class AttendanceManagementController extends Controller
                     'time_range'    => $leave?->time_range,
                     'half_day_type' => $leave?->half_day_type,
                     'shift_name'    => null,
+                    'is_weekend'    => $isWeekend,
+                    'is_holiday'    => $isHoliday,
+                    'holiday_name'  => $holidayName,
                 ];
             }
         }
+
         return $this->success(true, 'Attendance list for all employees retrieved successfully.', $response);
     }
+
 
     function getShiftForCheckIn($siteId, $checkInTime)
     {
@@ -431,7 +509,7 @@ class AttendanceManagementController extends Controller
 
                 return $this->success(true, 'Check-Out recorded with shift.', $attendance);
             }
-        }else{
+        } else {
             return $this->error('Your face is not recognized.');
         }
     }
@@ -487,7 +565,7 @@ class AttendanceManagementController extends Controller
 
                 return $this->success(true, 'Check-Out recorded with shift.', $attendance);
             }
-        }else{
+        } else {
             return $this->error('Your face is not recognized.');
         }
     }

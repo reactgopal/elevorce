@@ -16,72 +16,89 @@
     <link href="{{ asset('assets/css/style.css') }}" rel="stylesheet">
 </head>
 
-<body class="h-100 bg-body">
+<body class="">
 
     <!-- Blue wave background -->
-    <div class="position-absolute top-0 start-0 w-100 wave-bg">
+    {{-- <div class="position-absolute top-0 start-0 w-100 wave-bg">
         <div class="container py-4 px-5">
             <img src="{{ asset('assets/images/breathe_logo.svg') }}" height="32" alt="Breathe Logo">
         </div>
-    </div>
+    </div> --}}
 
-    <!-- Centered Login Card -->
-    <div class="login-wrapper container">
-        <div class="login_card p-4">
-            <div class="text-center login-icon">
-                <img src="{{ asset('assets/images/breathe_icon.svg') }}" alt="Login Icon">
-            </div>
-            <h2 class="text-center login-title">Log in to Breathe</h2>
-
-            <!-- Login Form -->
-            {{-- <form method="POST" action="{{ route('login') }}"> --}}
-            <form action="{{ route('admin.login.submit') }}" method="POST">
-                @csrf
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email address</label>
-                    <input type="email" name="email" id="email" class="form-control" placeholder="Email"
-                        required>
+    <div class="">
+        <div class="login-body">
+            <nav class="max-w-1240 flex justify-between w-full p-4 pt-8 mx-auto ">
+                <div class=" logo">
+                    <a href="{{ route('login') }}"><img src="{{ asset('assets/images/breathe_logo.svg') }}"
+                            alt="logo"></a>
                 </div>
+            </nav>
 
-                <div class="mb-3 password-wrapper">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" name="password" id="password" class="form-control" placeholder="Password"
-                        required>
-                    <span class="toggle-password" onclick="togglePassword()">
-                        👁️</span>
+            <!-- Centered Login Card -->
+            <div class="login-wrapper">
+                <div class="login_card">
+                    <div class=" login-icon">
+                        <img src="{{ asset('assets/images/breathe_icon.svg') }}" alt="Login Icon">
+                    </div>
+                    <h2 class="login-title">Login to Elevorce</h2>
+
+                    <!-- Login Form -->
+                    <form action="{{ route('admin.login.submit') }}" method="POST">
+                        @csrf
+                        <div class="login_field_bg">
+                            <label for="email" class="form-label">Email address</label>
+                            <input type="email" name="email" id="email" class="form-control" placeholder="Email address"
+                                required>
+                        </div>
+
+                        <div class="login_field_for_password password-wrapper">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" name="password" id="password" class="form-control"
+                                placeholder="Password" required>
+                            {{-- <span class="toggle-password" onclick="togglePassword()">
+                        👁️</span> --}}
+                        </div>
+                        <div class="login_field_for_password centered">
+                            <button type="submit" class="btn-login mt-2">Login</button>
+                        </div>
+                    </form>
+
+                    <!-- Links -->
+                    <div class="centered login-links">
+                        <div class="text-grey mb-2 text-center">
+                            <a href="#">Forgot your Password?</a>
+                        </div>
+                        <div class="">
+                            <a href="#" class="text-gray-500 underline hover:text-blue-900 hover:underline">Create
+                                Account</a>
+                        </div>
+                    </div>
                 </div>
-
-                <button type="submit" class="btn-login mt-2">Login</button>
-            </form>
-
-            <!-- Links -->
-            <div class="login-links text-center">
-                <a href="#">Forgot Password?</a>
-                <a href="#">Create Account</a>
             </div>
+
+
+            <!-- Footer -->
+            <footer class="footer__login  w-100  text-center small text-muted py-3 mt-auto ">
+                <div class="footer__login_container">
+                    <div class="footer__login_flex-container">
+                        <div class="mb-2 d-flex">
+                            <a href="#" class="footer_login_icon"><img
+                                    src="{{ asset('assets/images/facebook.png') }}" height="30" alt="Facebook"></a>
+                            <a href="#" class="footer_login_icon"><img
+                                    src="{{ asset('assets/images/linkedin.png') }}" height="30" class="mx-2"
+                                    alt="LinkedIn"></a>
+                            <a href="#" class="footer_login_icon"><img
+                                    src="{{ asset('assets/images/youtube.png') }}" height="30" alt="YouTube"></a>
+                        </div>
+                        <div class="copyright">
+                            <div class="footer-text">Registered in England, Company Number 3020608</div>
+                            <div>2025 Centurion. All rights reserved.</div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
     </div>
-
-
-    <!-- Footer -->
-    <footer class="footer__login position-absolute w-100  text-center small text-muted py-3 mt-auto ">
-        <div class="footer__login_container">
-            <div class="footer__login_flex-container">
-                <div class="mb-2 d-flex">
-                    <a href="#" class="footer_login_icon"><img src="{{ asset('assets/images/facebook.png') }}"
-                            height="30" alt="Facebook"></a>
-                    <a href="#" class="footer_login_icon"><img src="{{ asset('assets/images/linkedin.png') }}"
-                            height="30" class="mx-2" alt="LinkedIn"></a>
-                    <a href="#" class="footer_login_icon"><img src="{{ asset('assets/images/youtube.png') }}"
-                            height="30" alt="YouTube"></a>
-                </div>
-                <div class="copyright">
-                    <div class="footer-text">Registered in England, Company Number 3020608</div>
-                    <div>2025 Centurion. All rights reserved.</div>
-                </div>
-            </div>
-        </div>
-    </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

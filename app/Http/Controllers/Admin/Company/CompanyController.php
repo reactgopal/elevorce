@@ -24,6 +24,15 @@ class CompanyController extends Controller
 
     public function store(Request $request)
     {
+        $email = User::where('email', $request->email)->first();
+        if ($email) {
+            return redirect()->back()->with('error', 'Email already exists.');
+        }
+        $number = User::where('number', $request->number)->first();
+        if ($number) {
+            return redirect()->back()->with('error', 'Number already exists.');
+        }
+
 
         $input = [
             'name' => $request->name,
@@ -73,6 +82,16 @@ class CompanyController extends Controller
 
     public function update(Request $request, $id)
     {
+
+        $email = User::where('email', $request->email)->where('id', '!=', $id)->first();
+        if ($email) {
+            return redirect()->back()->with('error', 'Email already exists.');
+        }
+        $number = User::where('number', $request->number)->where('id', '!=', $id)->first();
+        if ($number) {
+            return redirect()->back()->with('error', 'Number already exists.');
+        }
+
         $user = User::findOrFail($id);
 
         $input = [
@@ -117,9 +136,8 @@ class CompanyController extends Controller
                 File::delete($imagePath);
             }
         }
-        
+
         User::destroy($id);
-        return redirect()->route('company.index')->with('success', 'company deleted.');
+        return redirect()->route('company.index')->with('success', 'company deleted successfully.');
     }
 }
-
