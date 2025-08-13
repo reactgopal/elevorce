@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Attendance;
+use App\Models\Holiday;
 use App\Models\Leave;
 use App\Models\Site;
 use App\Models\SiteManager;
@@ -15,6 +16,7 @@ class AttendanceManagementController extends Controller
 {
     public function getAttendanceList(Request $request)
     {
+
         $employer = auth()->user();
         $date = $request->input('date');
 
@@ -29,6 +31,30 @@ class AttendanceManagementController extends Controller
         $employees = SiteManager::where('employer_id', $employer->id)->get();
         $response = [];
         foreach ($employees as $employee) {
+            $holidays = Holiday::where('employer_id', $employee->employer_id)
+                    ->get()
+                    ->map(function ($holiday) {
+                        return [
+                            'start_date' => Carbon::parse($holiday->start_date)->format('Y-m-d'),
+                            'end_date'   => Carbon::parse($holiday->end_date)->format('Y-m-d'),
+                            'name'       => $holiday->occasion
+                        ];
+                    });
+
+                // Check if this date is in a holiday range
+                $holidayMatch = $holidays->first(function ($h) use ($dateCarbon) {
+                    $dateStr = $dateCarbon->format('Y-m-d');
+                    return $dateStr >= $h['start_date'] && $dateStr <= $h['end_date'];
+                });
+
+                $isWeekend = $dateCarbon->isSunday();
+                $isHoliday = !empty($holidayMatch);
+                $holidayName = $isHoliday
+                ? $holidayMatch['name']
+                : ($isWeekend ? "Sunday" : null);
+
+                // Check if weekend
+
             $attendance = Attendance::with(['site', 'shift'])
                 ->where('site_manager_id', $employee->id)
                 ->whereDate('check_in', $dateCarbon)
@@ -78,6 +104,9 @@ class AttendanceManagementController extends Controller
                     'time_range'    => null,
                     'half_day_type' => null,
                     'shift_name'    => optional($attendance->shift)->name,
+                     'is_weekend'    => $isWeekend,
+                        'is_holiday'    => $isHoliday,
+                        'holiday_name'  => $holidayName,
                 ];
             } else {
                 $response[] = [
@@ -97,6 +126,9 @@ class AttendanceManagementController extends Controller
                     'time_range'    => null,
                     'half_day_type' => null,
                     'shift_name'    => null,
+                     'is_weekend'    => $isWeekend,
+                        'is_holiday'    => $isHoliday,
+                        'holiday_name'  => $holidayName,
                 ];
             }
         }

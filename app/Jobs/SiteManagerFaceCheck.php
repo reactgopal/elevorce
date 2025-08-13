@@ -30,7 +30,7 @@ class SiteManagerFaceCheck implements ShouldQueue
      */
     public function handle($parameter)
     {
-        $output = shell_exec("python3 " . escapeshellarg(base_path('public/scripts/face_identification_get_new_user_for_photographer_images.py')) . " " . escapeshellarg($parameter));
+        $output = shell_exec("python3" . escapeshellarg(base_path('public/scripts/face_identification_get_new_user_for_photographer_images.py')) . " " . escapeshellarg($parameter));
 
         return $output ? json_decode($output, true) : ['status' => 'error', 'message' => 'No output'];
     }

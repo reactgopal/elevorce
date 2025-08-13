@@ -18,8 +18,9 @@ class RequestCorrectionController extends Controller
     public function requestCorrectionList(Request $request)
     {
         $siteManager = Auth::user();
+        $employee = Employee::where('site_id',$siteManager->site_id)->pluck('id')->toArray();
         $requests = CorrectionRequest::with('employee')
-            ->where('site_id', $siteManager->site_id)
+            ->whereIn('employee_id', $employee)
             ->orderBy('created_at', 'DESC')->where('status', 'pending')
             ->get();
         return $this->success(true, 'Correction request list fetched successfully.', $requests);

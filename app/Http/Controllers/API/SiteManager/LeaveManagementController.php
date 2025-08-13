@@ -48,6 +48,18 @@ class LeaveManagementController extends Controller
             $leave->rejected_reason = null;
         }
         $leave->save();
+
+        // if($leave) {
+        //     $notifications = [
+        //         'device_token' => $leave->employee->device_token,
+        //         'device_type'  => $leave->employee->device_type,
+        //         'title'        => 'Leave Status Update',
+        //         'message'      => 'Your leave request has been '. ucfirst($request->status). '. Reason: '. $request->rejected_reason,
+        //         'type'         => 'leave_status_update',
+        //     ];
+        //     $this->sendPushNotification($notifications['device_token'], $notifications['device_type'], $notifications['title'], $notifications['message'], $notifications['type']);
+        // }
+        
         return $this->success(true, 'Leave status updated successfully.', $leave);
     }
 

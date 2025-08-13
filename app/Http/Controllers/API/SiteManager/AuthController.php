@@ -101,7 +101,7 @@ class AuthController extends Controller
 
     public function editSiteManagerProfile(Request $request)
     {
-         $user = SiteManager::find(auth()->user()->id);
+        $user = SiteManager::find(auth()->user()->id);
 
         $validator = Validator::make($request->all(), [
             'name'     => 'nullable',
@@ -139,7 +139,6 @@ class AuthController extends Controller
             File::copy(public_path('images/site_manager/' . $imageName), public_path('images/site_manager/selfie/' . $imageName));
             $user->image = $imageName;
             $user->selfie = $imageName;
-
         }
 
         // if ($request->hasFile('selfie')) {

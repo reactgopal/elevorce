@@ -102,29 +102,29 @@ class LeaveManagementController extends Controller
         if ($leave) {
             $employee = auth()->user();
             $site = Site::find($employee->site_id);
-            if ($site) {
-                $employer = User::find($site->employer_id);
-                if ($employer) {
-                    $title = 'Leave Cancelled';
-                    $msg = 'The employee has cancelled their leave request.';
-                    $type = 'leave_cancelled';
-                    $data = [
-                        'device_token' =>  $employer->device_token,
-                        'device_type' =>  $employer->device_type,
-                        'title' => $title,
-                        'msg' => $msg,
-                        'type' => $type,
-                    ];
-                    $this->sendPushNotification($data['device_token'], $data['device_type'], $data['title'], $data['msg'], $data['type']);
-                    Notification::create([
-                        'employee_id' => $leave->employee_id,
-                        'employer_id' => $site->employer_id,
-                        'message' => $title,
-                        'description' => $msg,
-                        'type' => $type,
-                    ]);
-                }
-            }
+            // if ($site) {
+            //     $employer = User::find($site->employer_id);
+            //     if ($employer) {
+            //         $title = 'Leave Cancelled';
+            //         $msg = 'The employee has cancelled their leave request.';
+            //         $type = 'leave_cancelled';
+            //         $data = [
+            //             'device_token' =>  $employer->device_token,
+            //             'device_type' =>  $employer->device_type,
+            //             'title' => $title,
+            //             'msg' => $msg,
+            //             'type' => $type,
+            //         ];
+            //         $this->sendPushNotification($data['device_token'], $data['device_type'], $data['title'], $data['msg'], $data['type']);
+            //         Notification::create([
+            //             'employee_id' => $leave->employee_id,
+            //             'employer_id' => $site->employer_id,
+            //             'message' => $title,
+            //             'description' => $msg,
+            //             'type' => $type,
+            //         ]);
+            //     }
+            // }
         }
         return $this->success(true, 'Leave cancelled successfully.', $leave);
     }

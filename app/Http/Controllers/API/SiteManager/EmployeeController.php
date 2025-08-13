@@ -114,4 +114,8 @@ class EmployeeController extends Controller
         $employee = Employee::select('id','selfie')->get();
         return $this->success(true, 'Employee get successfully.',$employee);
     }
+
+    
+
+
 }

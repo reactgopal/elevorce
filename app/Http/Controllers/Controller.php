@@ -47,7 +47,7 @@ class Controller extends BaseController
         return $token['access_token'];
     }
 
-    public function sendPushNotification($device_token, $device_type, $title, $msg, $type)
+    public function sendPushNotification($device_token, $device_type, $title,   $msg, $type)
     {
         $data['title'] = $title;
         $data['message'] = $msg;
